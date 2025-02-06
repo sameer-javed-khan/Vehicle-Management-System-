@@ -1,0 +1,369 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+class servicerecord
+{
+private:
+    string servicedate;
+    double servicecost;
+
+public:
+    servicerecord() : servicedate(""), servicecost(0.0) {}
+
+    void setservicerecord(const string& date, double cost)
+    {
+        servicedate = date;
+        servicecost = cost;
+    }
+
+    string getservicedate() const 
+    {
+        return servicedate;
+    }
+
+    double getservicecost() const 
+    {
+        return servicecost;
+    }
+
+    servicerecord operator+(const servicerecord& other) const 
+    {
+        servicerecord combined;
+        combined.servicecost = this->servicecost + other.servicecost;
+        return combined;
+    }
+};
+
+class vehicle 
+{
+protected:
+    string make;
+    string model;
+    int year;
+    servicerecord records[5];
+    int recordcount;
+
+public:
+    vehicle() : year(0), recordcount(0) {}
+
+    virtual ~vehicle() 
+    {
+        cout << "vehicle destructor called" << endl;
+    }
+
+    void setvehicledetails(const string& mk, const string& mo, int y) 
+    {
+        make = mk;
+        model = mo;
+        year = y;
+    }
+
+    void addservicerecord(const string& date, double cost)
+    {
+        if (recordcount < 5)
+        {
+            records[recordcount].setservicerecord(date, cost);
+            recordcount++;
+        }
+        else
+        { 
+         cout << "cannot add more service records." << endl;
+        }
+    }
+
+    void displaydetails() const 
+    {
+        cout << "make: " << make << ", model: " << model << ", year: " << year << endl;
+        for (int i = 0; i < recordcount; i++) 
+        {
+            cout << "  service date: " << records[i].getservicedate() << ", cost: " << records[i].getservicecost() << endl;
+        }
+    }
+
+    void savetofile(ofstream& outfile) const
+    {
+        outfile << make << endl;
+        outfile << model << endl;
+        outfile << year << endl;
+        outfile << recordcount << endl;
+        for (int i = 0; i < recordcount; i++)
+        {
+            outfile << records[i].getservicedate() << endl;
+            outfile << records[i].getservicecost() << endl;
+        }
+    }
+
+    void loadfromfile(ifstream& infile) 
+    {
+        getline(infile, make);
+        getline(infile, model);
+        infile >> year;
+        infile >> recordcount;
+        infile.ignore(); 
+
+        for (int i = 0; i < recordcount; i++)
+        {
+            string date;
+            double cost;
+            getline(infile, date);  
+            infile >> cost;         
+            infile.ignore();        
+            records[i].setservicerecord(date, cost);
+        }
+    }
+};
+
+class fuelvehicle : virtual public vehicle
+{
+protected:
+    double fuelcapacity;
+    string fueltype;
+
+public:
+    fuelvehicle() : fuelcapacity(0.0), fueltype("") {}
+
+    virtual ~fuelvehicle() 
+    {
+        cout << "fuelvehicle destructor called" << endl;
+    }
+
+    void setfueldetails(double capacity, const string& type) 
+    {
+        fuelcapacity = capacity;
+        fueltype = type;
+    }
+
+    void displayfueldetails() const 
+    {
+        cout << "fuel capacity: " << fuelcapacity << "L, fuel type: " << fueltype << endl;
+    }
+};
+
+class electricvehicle : virtual public vehicle 
+{
+protected:
+    double batterycapacity;
+    double chargingtime;
+
+public:
+    electricvehicle() : batterycapacity(0.0), chargingtime(0.0) {}
+
+    virtual ~electricvehicle()
+    {
+        cout << "electricvehicle destructor called" << endl;
+    }
+
+    void setelectricdetails(double capacity, double time) 
+    {
+        batterycapacity = capacity;
+        chargingtime = time;
+    }
+
+    void displayelectricdetails() const 
+    {
+        cout << "battery capacity: " << batterycapacity << "kWh, charging time: " << chargingtime << " hours" << endl;
+        cout << "-------------------------------------------------------------------" << endl;
+        cout << endl;
+    }
+};
+
+class hybridvehicle : public fuelvehicle, public electricvehicle
+{
+public:
+    hybridvehicle() {}
+
+    ~hybridvehicle()
+    {
+        cout << "hybridvehicle destructor called" << endl;
+    }
+
+    void displaydetails() const 
+    {
+        vehicle::displaydetails();
+        displayfueldetails();
+        displayelectricdetails();
+    }
+
+  
+    void savetofile(ofstream& outfile) const 
+    {
+        vehicle::savetofile(outfile);
+        outfile << fuelcapacity << endl;
+        outfile << fueltype << endl;
+        outfile << batterycapacity << endl;
+        outfile << chargingtime << endl;
+    }
+
+    
+    void loadfromfile(ifstream& infile)
+    {
+        vehicle::loadfromfile(infile);
+        infile >> fuelcapacity;
+        infile.ignore();
+        getline(infile, fueltype);
+        infile >> batterycapacity;
+        infile >> chargingtime;
+        infile.ignore();
+    }
+};
+
+class user
+{
+private:
+    string username;
+    string password;
+    string role;
+
+public:
+    user() : username(""), password(""), role("") {}
+
+    void setuserdetails(const string& uname, const string& pwd, const string& role_)
+ {
+        username = uname;
+        password = pwd;
+        role = role_;
+    }
+
+    string getusername() const
+    {
+        return username;
+    }
+
+    bool validatepassword(const string& pwd) const
+    {
+        return password == pwd;
+    }
+
+    string getrole() const
+    {
+        return role;
+    }
+};
+
+void adminoperations(hybridvehicle* vehicles, int& count)
+{
+    string make, model, fueltype, date;
+    int year;
+    double fuelcapacity, batterycapacity, chargingtime, servicecost;
+
+    cout << "enter vehicle details: " << endl;
+    cout << "make: ";
+    cin >> make;
+    cout << "model: ";
+    cin >> model;
+    cout << "year: ";
+    cin >> year;
+
+    cout << "fuel capacity: ";
+    cin >> fuelcapacity;
+    cout << "fuel type: ";
+    cin >> fueltype;
+
+    cout << "battery capacity: ";
+    cin >> batterycapacity;
+    cout << "charging time: ";
+    cin >> chargingtime;
+
+    vehicles[count].setvehicledetails(make, model, year);
+    vehicles[count].setfueldetails(fuelcapacity, fueltype);
+    vehicles[count].setelectricdetails(batterycapacity, chargingtime);
+
+    cout << "enter service record:" << endl;
+    cout << "service date: ";
+    cin >> date;
+    cout << "service cost: ";
+    cin >> servicecost;
+
+    vehicles[count].addservicerecord(date, servicecost);
+    count++;
+
+    cout << "vehicle added successfully! " << endl;
+}
+
+void vieweroperations(const hybridvehicle* vehicles, int count) 
+{
+    for (int i = 0; i < count; i++) 
+    {
+        cout << "vehicle " << i + 1 << ":" << endl;
+        vehicles[i].displaydetails();
+    }
+}
+
+void loadvehiclesfromfile(hybridvehicle* vehicles, int& count) 
+{
+    ifstream infile("vehicles.txt");
+    if (!infile)
+    {
+        cout << "unable to open vehicles file for reading!" << endl;
+        return;
+    }
+
+    while (infile.peek() != EOF)
+     {
+        vehicles[count].loadfromfile(infile);
+        count++;
+    }
+
+    infile.close();
+}
+
+void savevehiclestofile(const hybridvehicle* vehicles, int count)
+{
+    ofstream outfile("vehicles.txt");
+    if (!outfile)
+    {
+        cout << "unable to open vehicles file for writing!" << endl;
+        return;
+    }
+
+    for (int i = 0; i < count; i++) 
+    {
+        vehicles[i].savetofile(outfile);
+    }
+
+    outfile.close();
+}
+ 
+int main() 
+{
+    cout << "*****************************************" << endl;
+    cout << "password for both admin and user is '1234'." << endl;
+    cout << "*****************************************" << endl;
+    hybridvehicle vehicles[10];
+    int vehiclecount = 0;
+
+    loadvehiclesfromfile(vehicles, vehiclecount);
+
+    user admin, viewer;
+    admin.setuserdetails("admin", "1234", "admin");
+    viewer.setuserdetails("viewer", "1234", "viewer");
+
+    string username, password;
+    cout << "login" << endl;
+    cout << "username: ";
+    cin >> username;
+    cout << "password: ";
+    cin >> password;
+    cout << endl;
+
+    if (username == admin.getusername() && admin.validatepassword(password)) 
+   {
+        cout << "welcome, admin!" << endl;
+        adminoperations(vehicles, vehiclecount);
+    }
+    else if (username == viewer.getusername() && viewer.validatepassword(password)) 
+    {
+        cout << "welcome, viewer!" << endl;
+        vieweroperations(vehicles, vehiclecount);
+    }
+    else 
+    {
+        cout << "invalid credentials!" << endl;
+    }
+
+    savevehiclestofile(vehicles, vehiclecount);
+
+    return 0;
+}
