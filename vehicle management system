@@ -12,10 +12,10 @@ private:
 public:
     servicerecord() : servicedate(""), servicecost(0.0) {}
 
-    void setservicerecord(const string& date, double cost)
+    void setservicerecord(const string& d, double c)
     {
-        servicedate = date;
-        servicecost = cost;
+        servicedate = d;
+        servicecost = c;
     }
 
     string getservicedate() const 
